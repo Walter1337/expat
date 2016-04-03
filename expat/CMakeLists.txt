@@ -6,6 +6,7 @@ project(expat)
 cmake_minimum_required(VERSION 2.6)
 set(PACKAGE_BUGREPORT "expat-bugs@libexpat.org")
 set(PACKAGE_NAME "expat")
+set(PACKAGE_EXPORT_NAME "EXPAT") # Must match form used by find_package
 set(PACKAGE_VERSION "2.1.1")
 set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME "${PACKAGE_NAME}")
@@ -67,9 +68,11 @@ endif(BUILD_shared)
 
 add_library(expat ${_SHARED} ${expat_SRCS})
 
-install(TARGETS expat RUNTIME DESTINATION bin
+install(TARGETS expat EXPORT ${PACKAGE_EXPORT_NAME}Config
+                      RUNTIME DESTINATION bin
                       LIBRARY DESTINATION lib
-                      ARCHIVE DESTINATION lib)
+                      ARCHIVE DESTINATION lib
+                      INCLUDES DESTINATION include)
 
 set(prefix ${CMAKE_INSTALL_PREFIX})
 set(exec_prefix "\${prefix}/bin")
@@ -80,7 +83,26 @@ configure_file(expat.pc.in ${CMAKE_CURRENT_BINARY_DIR}/expat.pc)
 install(FILES lib/expat.h lib/expat_external.h DESTINATION include)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/expat.pc DESTINATION lib/pkgconfig)
 
-
+# Export EXPATConfig.cmake package file that can be found by:
+#   find_package(EXPAT CONFIG)
+# Expat is then linked this this:
+#   add_executable(foo ...)
+#   target_link_libraries(foo EXPAT::expat)
+# Target foo will automagically inherit the necessary include paths and
+# compiler flags
+install(EXPORT ${PACKAGE_EXPORT_NAME}Config
+        NAMESPACE ${PACKAGE_EXPORT_NAME}:: DESTINATION lib/cmake/${PACKAGE_EXPORT_NAME})
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_EXPORT_NAME}ConfigVersion.cmake"
+  VERSION "${PACKAGE_VERSION}" COMPATIBILITY SameMajorVersion)
+install(
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_EXPORT_NAME}ConfigVersion.cmake"
+  DESTINATION lib/cmake/${PACKAGE_EXPORT_NAME})
+## During development export directly from build tree
+export(EXPORT ${PACKAGE_EXPORT_NAME}Config NAMESPACE ${PACKAGE_EXPORT_NAME}::
+       FILE ${PACKAGE_EXPORT_NAME}Config.cmake)
+export(PACKAGE ${PACKAGE_EXPORT_NAME})
 
 if(BUILD_tools AND NOT WINCE)
     set(xmlwf_SRCS
