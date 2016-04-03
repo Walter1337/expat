@@ -63,6 +63,10 @@ endif(BUILD_shared)
 
 add_library(expat ${_SHARED} ${expat_SRCS})
 
+if(NOT BUILD_shared)
+  target_compile_definitions(expat INTERFACE XML_STATIC)
+endif()
+
 install(TARGETS expat EXPORT ${PACKAGE_EXPORT_NAME}Config
                       RUNTIME DESTINATION bin
                       LIBRARY DESTINATION lib
