@@ -7,9 +7,6 @@
 # Note: tagname may be HEAD to just grab the head revision (e.g. for testing)
 #
 
-#CVSROOT=':ext:cvs.libexpat.org:/cvsroot/expat'
-CVSROOT=':pserver:anonymous@expat.cvs.sourceforge.net:/cvsroot/expat'
-
 if test $# != 1; then
   echo "USAGE: $0 tagname"
   exit 1
@@ -22,12 +19,14 @@ if test -e $tmpdir; then
 fi
 
 echo "Checking out into temporary area: $tmpdir"
-cvs -fq -d "$CVSROOT" export -r "$1" -d $tmpdir expat || exit 1
+mkdir -p "${tmpdir}" || exit 1
+git archive --format=tar -o /dev/stdout "$1" | ( cd $tmpdir && tar xf -) || exit 1
 
 echo ""
 echo "----------------------------------------------------------------------"
-echo "Preparing $tmpdir for release (running buildconf.sh)"
+echo "Preparing $tmpdir for release"
 (cd $tmpdir && ./buildconf.sh) || exit 1
+(make -C $tmpdir/doc xmlwf.1) || exit 1
 
 # figure out the release version
 vsn="`$tmpdir/conftools/get-version.sh $tmpdir/lib/expat.h`"
@@ -68,9 +67,9 @@ echo "----------------------------------------------------------------------"
 echo "Removing (temporary) checkout directory..."
 rm -rf $tmpdir
 
-tarball=$distdir.tar.gz
+tarball=$distdir.tar.bz2
 echo "Constructing $tarball..."
-tar cf - $distdir | gzip -9 > $tarball || exit $?
+tar cf - $distdir | bzip2 -9 > $tarball || exit $?
 rm -r $distdir
 
 echo "Done."
